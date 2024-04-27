@@ -12,4 +12,5 @@ TOP_UPGRADE: Tuple = (330, 385)
 EXPLINATION_MARK_OFFSET: int = 30
 PHONE_WINDOW: str = 'SM-A346E'
 NORMAL_GEOMETRY: Tuple = (1094, 84, 442, 957)
+SPRITES: Tuple = ("big_cross.png", "crate.png", "crate1.png", "crate4.png", "explination_mark.png", "upgrade.png")
 ZOOM: int = 1

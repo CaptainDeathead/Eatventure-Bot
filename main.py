@@ -1,4 +1,5 @@
 import pyautogui as pyg
+from PIL import Image
 from pynput import keyboard
 from time import sleep
 from typing import Tuple
@@ -14,17 +15,25 @@ enter_pressed: bool = False
 
 window_geometry: Tuple = get_scrcpy_window_geometry()
 
-ZOOM = window_geometry[2]/NORMAL_GEOMETRY[2]
+ZOOM = window_geometry[3]/NORMAL_GEOMETRY[3]
 
 # set all the sizes for all the variables by deviding by zoom and adding the windows x and y coords
-MIDDLE_X = int(MIDDLE_X/ZOOM) + window_geometry[0]
-TOP_SCROLL_Y = int(TOP_SCROLL_Y/ZOOM) + window_geometry[1]
-HALF_SCROLL = int(HALF_SCROLL/ZOOM) + window_geometry[1]
-BOTTOM_SCROLL_Y = int(BOTTOM_SCROLL_Y/ZOOM) + window_geometry[1]
-MAX_CHECK_X = int(MAX_CHECK_X/ZOOM)
-UPGRADE = (int(UPGRADE[0]/ZOOM) + window_geometry[0], int(UPGRADE[1]/ZOOM) + window_geometry[1])
-TOP_UPGRADE = (int(TOP_UPGRADE[0]/ZOOM) + window_geometry[0], int(TOP_UPGRADE[1]/ZOOM) + window_geometry[1])
-EXPLINATION_MARK_OFFSET = int(EXPLINATION_MARK_OFFSET/ZOOM)
+Y_OFFSET_UPGRADE_MENU = int(Y_OFFSET_UPGRADE_MENU*ZOOM)
+MIDDLE_X = int(MIDDLE_X*ZOOM) + window_geometry[0]
+TOP_SCROLL_Y = int(TOP_SCROLL_Y*ZOOM) + window_geometry[1]
+HALF_SCROLL = int(HALF_SCROLL*ZOOM) + window_geometry[1]
+BOTTOM_SCROLL_Y = int(BOTTOM_SCROLL_Y*ZOOM) + window_geometry[1]
+MAX_CHECK_X = int(MAX_CHECK_X*ZOOM)
+UPGRADE = (int(UPGRADE[0]*ZOOM) + window_geometry[0], int(UPGRADE[1]*ZOOM) + window_geometry[1])
+TOP_UPGRADE = (int(TOP_UPGRADE[0]*ZOOM) + window_geometry[0], int(TOP_UPGRADE[1]*ZOOM) + window_geometry[1])
+EXPLINATION_MARK_OFFSET = int(EXPLINATION_MARK_OFFSET*ZOOM)
+
+for sprite_path in SPRITES:
+    new_sprite_path = sprite_path.replace('.png', '_resized.png')
+    image = Image.open(sprite_path)
+
+    new_image = image.resize((int(image.width*ZOOM), int(image.height*ZOOM)))
+    new_image.save(new_sprite_path)
 
 def on_press(key):
     global space_pressed
@@ -55,6 +64,9 @@ def scroll():
         start_y = TOP_SCROLL_Y
         target_y = HALF_SCROLL
 
+    # cant scroll on box so just click to the side so upgrade box is not blocking
+    pyg.click(MIDDLE_X-int(200*ZOOM), start_y)
+
     pyg.mouseDown(MIDDLE_X, start_y)
     pyg.moveTo(MIDDLE_X, target_y, duration=1)
     pyg.mouseUp()
@@ -67,15 +79,15 @@ def scroll():
 
 def check_for_and_close_popup(done_once: bool = False):
     try:
-        for popup in pyg.locateAllOnScreen('big_cross.png', confidence=0.90, grayscale=True, region=window_geometry):
-            pyg.click(popup.left+popup.width/2, popup.top+popup.height/2)
+        for popup in pyg.locateAllOnScreen('big_cross_resized.png', confidence=0.9, grayscale=True, region=window_geometry):
+            pyg.click(popup.left+popup.width/ZOOM/2, popup.top+popup.height/ZOOM/2)
             if not done_once: check_for_and_close_popup(True)
             break
     except: return
 
 def check_for_and_close_explaination():
     try:
-        for mark in pyg.locateAllOnScreen('explination_mark.png', confidence=0.85, grayscale=True, region=window_geometry):
+        for mark in pyg.locateAllOnScreen('explination_mark_resized.png', confidence=0.85, grayscale=True, region=window_geometry):
             y_pos: int = mark.top+EXPLINATION_MARK_OFFSET
             for i in range(-MAX_CHECK_X, MAX_CHECK_X):
                 if pyg.pixelMatchesColor(mark.left+i, y_pos, (255,255,255)):
@@ -87,13 +99,13 @@ def check_for_and_close_explaination():
 
 def crates():
     try:
-        for crate in pyg.locateAllOnScreen('crate.png', confidence=0.8, grayscale=True, region=window_geometry):
+        for crate in pyg.locateAllOnScreen('crate_resized.png', confidence=0.8, grayscale=True, region=window_geometry):
             pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
 
-        for crate in pyg.locateAllOnScreen('crate1.png', confidence=0.8, grayscale=True, region=window_geometry):
+        for crate in pyg.locateAllOnScreen('crate1_resized.png', confidence=0.8, grayscale=True, region=window_geometry):
             pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
 
-        for crate in pyg.locateAllOnScreen('crate4.png', confidence=0.8, grayscale=True, region=window_geometry):
+        for crate in pyg.locateAllOnScreen('crate4_resized.png', confidence=0.8, grayscale=True, region=window_geometry):
             pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
 
     except: return
@@ -123,10 +135,14 @@ while 1:
         check_for_and_close_explaination()
         upgrades()
         crates()
-        for upgrade in pyg.locateAllOnScreen('upgrade.png', confidence=0.85, grayscale=True, region=window_geometry):
+        for upgrade in pyg.locateAllOnScreen('upgrade_resized.png', confidence=0.85, grayscale=True, region=window_geometry):
             check_for_and_close_popup()
 
-            pyg.click(upgrade.left+upgrade.width, upgrade.top+30)
+            station_location: Tuple = (upgrade.left+upgrade.width, upgrade.top+30*ZOOM)
+
+            if station_location[1] > window_geometry[1]+window_geometry[3]-Y_OFFSET_UPGRADE_MENU*2: continue
+
+            pyg.click(station_location)
             sleep(0.5)
 
             check_for_and_close_popup()
