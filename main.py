@@ -2,6 +2,7 @@ import pyautogui as pyg
 from pynput import keyboard
 from time import sleep
 from typing import Tuple
+from get_window import get_scrcpy_window_geometry
 from data import *
 
 scrolls_left: int = MAX_SCROLLS
@@ -11,7 +12,19 @@ space_pressed: bool = False
 backspace_pressed: bool = False
 enter_pressed: bool = False
 
-#pygetwindow.
+window_geometry: Tuple = get_scrcpy_window_geometry()
+
+ZOOM = window_geometry[2]/NORMAL_GEOMETRY[2]
+
+# set all the sizes for all the variables by deviding by zoom and adding the windows x and y coords
+MIDDLE_X = int(MIDDLE_X/ZOOM) + window_geometry[0]
+TOP_SCROLL_Y = int(TOP_SCROLL_Y/ZOOM) + window_geometry[1]
+HALF_SCROLL = int(HALF_SCROLL/ZOOM) + window_geometry[1]
+BOTTOM_SCROLL_Y = int(BOTTOM_SCROLL_Y/ZOOM) + window_geometry[1]
+MAX_CHECK_X = int(MAX_CHECK_X/ZOOM)
+UPGRADE = (int(UPGRADE[0]/ZOOM) + window_geometry[0], int(UPGRADE[1]/ZOOM) + window_geometry[1])
+TOP_UPGRADE = (int(TOP_UPGRADE[0]/ZOOM) + window_geometry[0], int(TOP_UPGRADE[1]/ZOOM) + window_geometry[1])
+EXPLINATION_MARK_OFFSET = int(EXPLINATION_MARK_OFFSET/ZOOM)
 
 def on_press(key):
     global space_pressed
@@ -54,7 +67,7 @@ def scroll():
 
 def check_for_and_close_popup(done_once: bool = False):
     try:
-        for popup in pyg.locateAllOnScreen('big_cross.png', confidence=0.90, grayscale=True):
+        for popup in pyg.locateAllOnScreen('big_cross.png', confidence=0.90, grayscale=True, region=window_geometry):
             pyg.click(popup.left+popup.width/2, popup.top+popup.height/2)
             if not done_once: check_for_and_close_popup(True)
             break
@@ -62,7 +75,7 @@ def check_for_and_close_popup(done_once: bool = False):
 
 def check_for_and_close_explaination():
     try:
-        for mark in pyg.locateAllOnScreen('explination_mark.png', confidence=0.85, grayscale=True):
+        for mark in pyg.locateAllOnScreen('explination_mark.png', confidence=0.85, grayscale=True, region=window_geometry):
             y_pos: int = mark.top+EXPLINATION_MARK_OFFSET
             for i in range(-MAX_CHECK_X, MAX_CHECK_X):
                 if pyg.pixelMatchesColor(mark.left+i, y_pos, (255,255,255)):
@@ -74,7 +87,10 @@ def check_for_and_close_explaination():
 
 def crates():
     try:
-        for crate in pyg.locateAllOnScreen('crate4.png', confidence=0.8, grayscale=True):
+        for crate in pyg.locateAllOnScreen('crate.png', confidence=0.8, grayscale=True, region=window_geometry):
+            pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
+
+        for crate in pyg.locateAllOnScreen('crate4.png', confidence=0.8, grayscale=True, region=window_geometry):
             pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
 
     except: return
@@ -104,7 +120,7 @@ while 1:
         check_for_and_close_explaination()
         upgrades()
         crates()
-        for upgrade in pyg.locateAllOnScreen('upgrade.png', confidence=0.85, grayscale=True):
+        for upgrade in pyg.locateAllOnScreen('upgrade.png', confidence=0.85, grayscale=True, region=window_geometry):
             check_for_and_close_popup()
 
             pyg.click(upgrade.left+upgrade.width, upgrade.top+30)
