@@ -90,6 +90,9 @@ def crates():
         for crate in pyg.locateAllOnScreen('crate.png', confidence=0.8, grayscale=True, region=window_geometry):
             pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
 
+        for crate in pyg.locateAllOnScreen('crate1.png', confidence=0.8, grayscale=True, region=window_geometry):
+            pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
+
         for crate in pyg.locateAllOnScreen('crate4.png', confidence=0.8, grayscale=True, region=window_geometry):
             pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
 
