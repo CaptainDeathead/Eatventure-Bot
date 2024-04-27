@@ -8,14 +8,28 @@ scrolls_left: int = MAX_SCROLLS
 scroll_down: bool = True
 
 space_pressed: bool = False
+backspace_pressed: bool = False
+enter_pressed: bool = False
+
+#pygetwindow.
 
 def on_press(key):
     global space_pressed
+    global backspace_pressed
+    global enter_pressed
+
     if key == keyboard.Key.space: space_pressed = True
+    elif key == keyboard.Key.backspace: backspace_pressed = True
+    elif key == keyboard.Key.enter: enter_pressed = True
 
 def on_release(key):
     global space_pressed
+    global backspace_pressed
+    global enter_pressed
+
     if key == keyboard.Key.space: space_pressed = False
+    elif key == keyboard.Key.backspace: backspace_pressed = False
+    elif key == keyboard.Key.enter: enter_pressed = False
 
 def scroll():
     global scrolls_left
@@ -46,8 +60,37 @@ def check_for_and_close_popup(done_once: bool = False):
             break
     except: return
 
-def get_key_exit():
+def check_for_and_close_explaination():
+    try:
+        for mark in pyg.locateAllOnScreen('explination_mark.png', confidence=0.85, grayscale=True):
+            y_pos: int = mark.top+EXPLINATION_MARK_OFFSET
+            for i in range(-MAX_CHECK_X, MAX_CHECK_X):
+                if pyg.pixelMatchesColor(mark.left+i, y_pos, (255,255,255)):
+                    pyg.click(mark.left+i, y_pos)
+                    break
+
+            check_for_and_close_popup()
+    except: return
+
+def crates():
+    try:
+        for crate in pyg.locateAllOnScreen('crate4.png', confidence=0.8, grayscale=True):
+            pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
+
+    except: return
+
+def upgrades():
+    pyg.click(UPGRADE)
+    sleep(1)
+    pyg.click(TOP_UPGRADE)
+    check_for_and_close_popup()
+
+def process_keys():
     if space_pressed: exit()
+    elif backspace_pressed:
+        while 1:
+            if enter_pressed: break
+            sleep(0.1)
 
 listener = keyboard.Listener(
     on_press=on_press,
@@ -56,9 +99,12 @@ listener = keyboard.Listener(
 listener.start()
 
 while 1:
-    get_key_exit()
+    process_keys()
     try:
-        for upgrade in pyg.locateAllOnScreen('upgrade.png', confidence=0.90, grayscale=True):
+        check_for_and_close_explaination()
+        upgrades()
+        crates()
+        for upgrade in pyg.locateAllOnScreen('upgrade.png', confidence=0.85, grayscale=True):
             check_for_and_close_popup()
 
             pyg.click(upgrade.left+upgrade.width, upgrade.top+30)
@@ -69,21 +115,22 @@ while 1:
             new_click_location: Tuple = (upgrade.left+upgrade.width, upgrade.top-Y_OFFSET_UPGRADE_MENU)
             if pyg.pixelMatchesColor(new_click_location[0], new_click_location[1], (85, 197, 251), tolerance=2) or pyg.pixelMatchesColor(new_click_location[0], new_click_location[1], (68, 158, 203), tolerance=2):
                 for i in range(0, 20):
-                    get_key_exit()
+                    process_keys()
                     pyg.click(new_click_location)
                     sleep(0.1)
             else:
                 for i in range(-MAX_CHECK_X, MAX_CHECK_X):
                     if pyg.pixelMatchesColor(new_click_location[0]+i, new_click_location[1], (85, 197, 251), tolerance=2) or pyg.pixelMatchesColor(new_click_location[0]+i, new_click_location[1], (68, 158, 203), tolerance=2):
+                        click_location = (new_click_location[0]+i, new_click_location[1])
                         for i in range(0, 20):
-                            get_key_exit()
-                            pyg.click(new_click_location[0]+i, new_click_location[1])
+                            process_keys()
+                            pyg.click(click_location)
                             sleep(0.1)
                         break
 
-        scroll()
+        if MAX_SCROLLS > 0: scroll()
 
     except:
         check_for_and_close_popup()
-        scroll()
-        sleep(1)
+        crates()
+        if MAX_SCROLLS > 0: scroll()
