@@ -51,7 +51,7 @@ def on_release(key):
 
     if key == keyboard.Key.space: space_pressed = False
     elif key == keyboard.Key.backspace: backspace_pressed = False
-    elif key == keyboard.Key.enter: enter_pressed = False
+    elif key == keyboard.Key.enter: enter_pressed = False                             
 
 def scroll():
     global scrolls_left
@@ -65,7 +65,7 @@ def scroll():
         target_y = HALF_SCROLL
 
     # cant scroll on box so just click to the side so upgrade box is not blocking
-    pyg.click(MIDDLE_X-int(200*ZOOM), start_y)
+    pyg.click(MIDDLE_X-int(200*ZOOM), start_y-int(100*ZOOM))
 
     pyg.mouseDown(MIDDLE_X, start_y)
     pyg.moveTo(MIDDLE_X, target_y, duration=1)
@@ -151,16 +151,16 @@ while 1:
             if pyg.pixelMatchesColor(new_click_location[0], new_click_location[1], (85, 197, 251), tolerance=2) or pyg.pixelMatchesColor(new_click_location[0], new_click_location[1], (68, 158, 203), tolerance=2):
                 for i in range(0, 20):
                     process_keys()
+                    check_for_and_close_popup()
                     pyg.click(new_click_location)
-                    sleep(0.1)
             else:
                 for i in range(-MAX_CHECK_X, MAX_CHECK_X):
                     if pyg.pixelMatchesColor(new_click_location[0]+i, new_click_location[1], (85, 197, 251), tolerance=2) or pyg.pixelMatchesColor(new_click_location[0]+i, new_click_location[1], (68, 158, 203), tolerance=2):
                         click_location = (new_click_location[0]+i, new_click_location[1])
                         for i in range(0, 20):
                             process_keys()
+                            check_for_and_close_popup()
                             pyg.click(click_location)
-                            sleep(0.1)
                         break
 
         if MAX_SCROLLS > 0: scroll()
