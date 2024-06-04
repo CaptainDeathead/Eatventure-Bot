@@ -81,7 +81,7 @@ def scroll():
 
 def check_for_and_close_popup(done_once: bool = False) -> bool: # returns true if a popup is found (checks for popups twice to be sure)
     try:
-        for popup in pyg.locateAllOnScreen('big_cross_resized.png', confidence=0.9, grayscale=True, region=window_geometry):
+        for popup in pyg.locateAllOnScreen('big_cross_resized.png', confidence=0.8, grayscale=True, region=window_geometry):
             pyg.click(popup.left+popup.width/ZOOM/2, popup.top+popup.height/ZOOM/2)
             if not done_once: check_for_and_close_popup(True)
             break
@@ -106,12 +106,15 @@ def crates():
     try:
         for crate in pyg.locateAllOnScreen('crate_resized.png', confidence=0.8, grayscale=True, region=window_geometry):
             pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
+            check_for_and_close_popup()
 
         for crate in pyg.locateAllOnScreen('crate1_resized.png', confidence=0.8, grayscale=True, region=window_geometry):
             pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
+            check_for_and_close_popup()
 
         for crate in pyg.locateAllOnScreen('crate4_resized.png', confidence=0.8, grayscale=True, region=window_geometry):
             pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
+            check_for_and_close_popup()
 
     except: return
 
@@ -161,6 +164,11 @@ while 1:
             print(pixel_color)
 
             if pixel_color == (75, 189, 255) or pixel_color == (79, 190, 255):
+                # click the button once to see if there is a popup, if there is one quit, else press it 20 more times without checking for popup
+                pyg.click(new_click_location)
+                        
+                if check_for_and_close_popup(): continue
+
                 for i in range(0, 20):
                     process_keys()
                     pyg.click(new_click_location)
@@ -168,7 +176,7 @@ while 1:
                 for i in range(-MAX_CHECK_X, MAX_CHECK_X):
                     scan_pixel_location = (new_click_location[0]+i, new_click_location[1])
 
-                    pyg.moveTo(scan_pixel_location)
+                    #pyg.moveTo(scan_pixel_location)
                     if screenshot.getpixel(scan_pixel_location) == (75, 189, 255) or screenshot.getpixel(scan_pixel_location) == (79, 190, 255):
                         
                         # click the button once to see if there is a popup, if there is one quit, else press it 20 more times without checking for popup
