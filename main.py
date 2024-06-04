@@ -30,11 +30,16 @@ UPGRADE = (int(UPGRADE[0]*ZOOM) + window_geometry[0], int(UPGRADE[1]*ZOOM) + win
 TOP_UPGRADE = (int(TOP_UPGRADE[0]*ZOOM) + window_geometry[0], int(TOP_UPGRADE[1]*ZOOM) + window_geometry[1])
 EXPLINATION_MARK_OFFSET = int(EXPLINATION_MARK_OFFSET*ZOOM)
 
+sprite_images = {}
+
 for sprite_path in SPRITES:
     new_sprite_path = sprite_path.replace('.png', '_resized.png')
     image = Image.open(sprite_path)
 
     new_image = image.resize((int(image.width*ZOOM), int(image.height*ZOOM)))
+
+    sprite_images[new_sprite_path] = new_image
+
     new_image.save(new_sprite_path)
 
 def on_press(key):
@@ -81,7 +86,7 @@ def scroll():
 
 def check_for_and_close_popup(done_once: bool = False) -> bool: # returns true if a popup is found (checks for popups twice to be sure)
     try:
-        for popup in pyg.locateAllOnScreen('big_cross_resized.png', confidence=0.8, grayscale=True, region=window_geometry):
+        for popup in pyg.locateAllOnScreen(sprite_images['big_cross_resized.png'], confidence=0.8, grayscale=True, region=window_geometry):
             pyg.click(popup.left+popup.width/ZOOM/2, popup.top+popup.height/ZOOM/2)
             if not done_once: check_for_and_close_popup(True)
             break
@@ -92,7 +97,7 @@ def check_for_and_close_popup(done_once: bool = False) -> bool: # returns true i
 
 def check_for_and_close_explaination():
     try:
-        for mark in pyg.locateAllOnScreen('explination_mark_resized.png', confidence=0.85, grayscale=True, region=window_geometry):
+        for mark in pyg.locateAllOnScreen(sprite_images['explination_mark_resized.png'], confidence=0.85, grayscale=True, region=window_geometry):
             y_pos: int = mark.top+EXPLINATION_MARK_OFFSET
             for i in range(-MAX_CHECK_X, MAX_CHECK_X):
                 if ImageGrab.grab().getpixel((mark.left+i, y_pos)) == (255, 255, 255):
@@ -104,15 +109,15 @@ def check_for_and_close_explaination():
 
 def crates():
     try:
-        for crate in pyg.locateAllOnScreen('crate_resized.png', confidence=0.8, grayscale=True, region=window_geometry):
+        for crate in pyg.locateAllOnScreen(sprite_images['crate_resized.png'], confidence=0.8, grayscale=True, region=window_geometry):
             pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
             check_for_and_close_popup()
 
-        for crate in pyg.locateAllOnScreen('crate1_resized.png', confidence=0.8, grayscale=True, region=window_geometry):
+        for crate in pyg.locateAllOnScreen(sprite_images['crate1_resized.png'], confidence=0.8, grayscale=True, region=window_geometry):
             pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
             check_for_and_close_popup()
 
-        for crate in pyg.locateAllOnScreen('crate4_resized.png', confidence=0.8, grayscale=True, region=window_geometry):
+        for crate in pyg.locateAllOnScreen(sprite_images['crate4_resized.png'], confidence=0.8, grayscale=True, region=window_geometry):
             pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
             check_for_and_close_popup()
 
@@ -143,7 +148,7 @@ while 1:
         check_for_and_close_explaination()
         upgrades()
         crates()
-        for upgrade in pyg.locateAllOnScreen('upgrade_resized.png', confidence=0.8, grayscale=True, region=window_geometry):
+        for upgrade in pyg.locateAllOnScreen(sprite_images['upgrade_resized.png'], confidence=0.8, grayscale=True, region=window_geometry):
             print(upgrade)
             check_for_and_close_popup()
 
