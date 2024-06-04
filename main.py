@@ -1,10 +1,12 @@
 import pyautogui as pyg
-from PIL import Image
+from PIL import Image, ImageGrab
 from pynput import keyboard
 from time import sleep
 from typing import Tuple
 from get_window import get_scrcpy_window_geometry
 from data import *
+
+pyg.FAILSAFE = False
 
 scrolls_left: int = MAX_SCROLLS
 scroll_down: bool = True
@@ -90,7 +92,7 @@ def check_for_and_close_explaination():
         for mark in pyg.locateAllOnScreen('explination_mark_resized.png', confidence=0.85, grayscale=True, region=window_geometry):
             y_pos: int = mark.top+EXPLINATION_MARK_OFFSET
             for i in range(-MAX_CHECK_X, MAX_CHECK_X):
-                if pyg.pixelMatchesColor(mark.left+i, y_pos, (255,255,255)):
+                if ImageGrab.grab().getpixel((mark.left+i, y_pos)) == (255, 255, 255):
                     pyg.click(mark.left+i, y_pos)
                     break
 
@@ -135,7 +137,8 @@ while 1:
         check_for_and_close_explaination()
         upgrades()
         crates()
-        for upgrade in pyg.locateAllOnScreen('upgrade_resized.png', confidence=0.85, grayscale=True, region=window_geometry):
+        for upgrade in pyg.locateAllOnScreen('upgrade_resized.png', confidence=0.8, grayscale=True, region=window_geometry):
+            print(upgrade)
             check_for_and_close_popup()
 
             station_location: Tuple = (upgrade.left+upgrade.width, upgrade.top+30*ZOOM)
@@ -146,26 +149,32 @@ while 1:
             sleep(0.5)
 
             check_for_and_close_popup()
+            process_keys()
 
             new_click_location: Tuple = (upgrade.left+upgrade.width, upgrade.top-Y_OFFSET_UPGRADE_MENU)
-            if pyg.pixelMatchesColor(new_click_location[0], new_click_location[1], (85, 197, 251), tolerance=2) or pyg.pixelMatchesColor(new_click_location[0], new_click_location[1], (68, 158, 203), tolerance=2):
+            screenshot = ImageGrab.grab()
+            print(screenshot.getpixel(new_click_location))
+            #if pyg.pixelMatchesColor(new_click_location[0], new_click_location[1], (85, 197, 251), tolerance=2) or pyg.pixelMatchesColor(new_click_location[0], new_click_location[1], (68, 158, 203), tolerance=2):
+            if screenshot.getpixel(new_click_location) == (75, 189, 255) or screenshot.getpixel(new_click_location) == (79, 190, 255):
                 for i in range(0, 20):
                     process_keys()
-                    check_for_and_close_popup()
                     pyg.click(new_click_location)
             else:
                 for i in range(-MAX_CHECK_X, MAX_CHECK_X):
-                    if pyg.pixelMatchesColor(new_click_location[0]+i, new_click_location[1], (85, 197, 251), tolerance=2) or pyg.pixelMatchesColor(new_click_location[0]+i, new_click_location[1], (68, 158, 203), tolerance=2):
+                    pyg.moveTo(new_click_location[0]+i, new_click_location[1])
+                    if screenshot.getpixel((new_click_location[0]+i, new_click_location[1])) == (75, 189, 255) or screenshot.getpixel((new_click_location[0]+i, new_click_location[1])) == (79, 190, 255):
                         click_location = (new_click_location[0]+i, new_click_location[1])
                         for i in range(0, 20):
                             process_keys()
-                            check_for_and_close_popup()
                             pyg.click(click_location)
                         break
 
+            check_for_and_close_popup()
+
         if MAX_SCROLLS > 0: scroll()
 
-    except:
+    except Exception as e:
+        print(e)
         check_for_and_close_popup()
         crates()
         if MAX_SCROLLS > 0: scroll()
