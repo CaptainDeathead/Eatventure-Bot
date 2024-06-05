@@ -1,10 +1,13 @@
 import pyautogui as pyg
 from PIL import Image, ImageGrab
+from vncdotool import api
 from pynput import keyboard
 from time import sleep
 from typing import Tuple
 from get_window import get_scrcpy_window_geometry
 from data import *
+
+client = api.connect('192.168.0.143')
 
 pyg.FAILSAFE = False
 
@@ -42,6 +45,17 @@ for sprite_path in SPRITES:
 
     new_image.save(new_sprite_path)
 
+def click(*args) -> None:
+    if len(args) == 1 and isinstance(args[0], tuple):
+        x, y = args[0]
+    else:
+        x, y = args
+
+    client.mouseMove(int(x - window_geometry[0]), int(y - window_geometry[1]))
+    client.mousePress(1)
+
+    sleep(0.05)
+
 def on_press(key):
     global space_pressed
     global backspace_pressed
@@ -72,7 +86,7 @@ def scroll():
         target_y = HALF_SCROLL
 
     # cant scroll on box so just click to the side so upgrade box is not blocking
-    pyg.click(MIDDLE_X-int(200*ZOOM), start_y-int(100*ZOOM))
+    click(MIDDLE_X-int(200*ZOOM), start_y-int(100*ZOOM))
 
     pyg.mouseDown(MIDDLE_X, start_y)
     pyg.moveTo(MIDDLE_X, target_y, duration=1)
@@ -87,7 +101,7 @@ def scroll():
 def check_for_and_close_popup(done_once: bool = False) -> bool: # returns true if a popup is found (checks for popups twice to be sure)
     try:
         for popup in pyg.locateAllOnScreen(sprite_images['big_cross_resized.png'], confidence=0.8, grayscale=True, region=window_geometry):
-            pyg.click(popup.left+popup.width/ZOOM/2, popup.top+popup.height/ZOOM/2)
+            click(popup.left+popup.width/ZOOM/2, popup.top+popup.height/ZOOM/2)
             if not done_once: check_for_and_close_popup(True)
             break
 
@@ -101,7 +115,7 @@ def check_for_and_close_explaination():
             y_pos: int = mark.top+EXPLINATION_MARK_OFFSET
             for i in range(-MAX_CHECK_X, MAX_CHECK_X):
                 if ImageGrab.grab().getpixel((mark.left+i, y_pos)) == (255, 255, 255):
-                    pyg.click(mark.left+i, y_pos)
+                    click(mark.left+i, y_pos)
                     break
 
             check_for_and_close_popup()
@@ -110,23 +124,23 @@ def check_for_and_close_explaination():
 def crates():
     try:
         for crate in pyg.locateAllOnScreen(sprite_images['crate_resized.png'], confidence=0.8, grayscale=True, region=window_geometry):
-            pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
+            click(crate.left+crate.width/2, crate.top+crate.height/2)
             check_for_and_close_popup()
 
         for crate in pyg.locateAllOnScreen(sprite_images['crate1_resized.png'], confidence=0.8, grayscale=True, region=window_geometry):
-            pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
+            click(crate.left+crate.width/2, crate.top+crate.height/2)
             check_for_and_close_popup()
 
         for crate in pyg.locateAllOnScreen(sprite_images['crate4_resized.png'], confidence=0.8, grayscale=True, region=window_geometry):
-            pyg.click(crate.left+crate.width/2, crate.top+crate.height/2)
+            click(crate.left+crate.width/2, crate.top+crate.height/2)
             check_for_and_close_popup()
 
     except: return
 
 def upgrades():
-    pyg.click(UPGRADE)
+    click(UPGRADE)
     sleep(1)
-    pyg.click(TOP_UPGRADE)
+    click(TOP_UPGRADE)
     check_for_and_close_popup()
 
 def process_keys():
@@ -148,7 +162,7 @@ while 1:
         check_for_and_close_explaination()
         upgrades()
         crates()
-        for upgrade in pyg.locateAllOnScreen(sprite_images['upgrade_resized.png'], confidence=0.8, grayscale=True, region=window_geometry):
+        for upgrade in pyg.locateAllOnScreen(sprite_images['upgrade_resized.png'], confidence=0.79, grayscale=True, region=window_geometry):
             print(upgrade)
             check_for_and_close_popup()
 
@@ -156,7 +170,7 @@ while 1:
 
             if station_location[1] > window_geometry[1]+window_geometry[3]-Y_OFFSET_UPGRADE_MENU*2: continue
 
-            pyg.click(station_location)
+            click(station_location)
             sleep(0.5)
 
             check_for_and_close_popup()
@@ -170,13 +184,13 @@ while 1:
 
             if pixel_color == (75, 189, 255) or pixel_color == (79, 190, 255):
                 # click the button once to see if there is a popup, if there is one quit, else press it 20 more times without checking for popup
-                pyg.click(new_click_location)
+                click(new_click_location)
                         
                 if check_for_and_close_popup(): continue
 
                 for i in range(0, 20):
                     process_keys()
-                    pyg.click(new_click_location)
+                    click(new_click_location)
             else:
                 for i in range(-MAX_CHECK_X, MAX_CHECK_X):
                     scan_pixel_location = (new_click_location[0]+i, new_click_location[1])
@@ -185,13 +199,13 @@ while 1:
                     if screenshot.getpixel(scan_pixel_location) == (75, 189, 255) or screenshot.getpixel(scan_pixel_location) == (79, 190, 255):
                         
                         # click the button once to see if there is a popup, if there is one quit, else press it 20 more times without checking for popup
-                        pyg.click(scan_pixel_location)
+                        click(scan_pixel_location)
                         
                         if check_for_and_close_popup(): break
 
                         for i in range(0, 20):
                             process_keys()
-                            pyg.click(scan_pixel_location)
+                            click(scan_pixel_location)
                             
                         break
 
