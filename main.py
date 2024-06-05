@@ -77,9 +77,14 @@ def on_press(key):
     global backspace_pressed
     global enter_pressed
 
-    if key == keyboard.Key.space: space_pressed = True
-    elif key == keyboard.Key.backspace: backspace_pressed = True
-    elif key == keyboard.Key.enter: enter_pressed = True
+    if key == keyboard.Key.f8: space_pressed = True
+    elif key == keyboard.Key.f7:
+        backspace_pressed = True
+        enter_pressed = False
+
+    elif key == keyboard.Key.f9:
+        enter_pressed = True
+        backspace_pressed = False
 
 def on_release(key):
     global space_pressed
