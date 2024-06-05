@@ -1,15 +1,27 @@
-import pyautogui as pyg
+import traceback
 from PIL import Image, ImageGrab
+from os import remove, path
 from vncdotool import api
+from imageUtils import _locateAll_opencv
 from pynput import keyboard
 from time import sleep
 from typing import Tuple
+from twisted.internet import reactor, defer
 from get_window import get_scrcpy_window_geometry
 from data import *
 
 client = api.connect('192.168.0.143')
 
-pyg.FAILSAFE = False
+def get_screen() -> Image:
+    client.captureScreen('shot.png')
+
+    while not path.exists("shot.png"):
+        sleep(0.01)
+
+    image = Image.open("shot.png")
+    remove("shot.png")
+
+    return image
 
 scrolls_left: int = MAX_SCROLLS
 scroll_down: bool = True
@@ -18,7 +30,11 @@ space_pressed: bool = False
 backspace_pressed: bool = False
 enter_pressed: bool = False
 
-window_geometry: Tuple = get_scrcpy_window_geometry()
+#window_geometry: Tuple = get_scrcpy_window_geometry()
+width, height = get_screen().size
+window_geometry: Tuple = (0, 0, width, height)
+
+print(f"@@@!!! FOUND DEVICE WIDTH AND HEIGHT -> CONFIGURING GEOMETRY AS SIZE: {window_geometry} !!!@@@")
 
 ZOOM = window_geometry[3]/NORMAL_GEOMETRY[3]
 
@@ -75,6 +91,8 @@ def on_release(key):
     elif key == keyboard.Key.enter: enter_pressed = False                             
 
 def scroll():
+    # TODO: PATCH THIS TO WORK WITH VNCDOTOOL
+
     global scrolls_left
     global scroll_down
 
@@ -88,9 +106,11 @@ def scroll():
     # cant scroll on box so just click to the side so upgrade box is not blocking
     click(MIDDLE_X-int(200*ZOOM), start_y-int(100*ZOOM))
 
+    """
     pyg.mouseDown(MIDDLE_X, start_y)
     pyg.moveTo(MIDDLE_X, target_y, duration=1)
     pyg.mouseUp()
+    """
 
     scrolls_left -= 1
 
@@ -100,18 +120,21 @@ def scroll():
 
 def check_for_and_close_popup(done_once: bool = False) -> bool: # returns true if a popup is found (checks for popups twice to be sure)
     try:
-        for popup in pyg.locateAllOnScreen(sprite_images['big_cross_resized.png'], confidence=0.8, grayscale=True, region=window_geometry):
+        found_popup = False
+
+        for popup in _locateAll_opencv(sprite_images['big_cross_resized.png'], get_screen(), confidence=0.8, grayscale=True):
+            found_popup = True
             click(popup.left+popup.width/ZOOM/2, popup.top+popup.height/ZOOM/2)
             if not done_once: check_for_and_close_popup(True)
             break
 
-    except: return False
+        return found_popup
 
-    return True
+    except: return False
 
 def check_for_and_close_explaination():
     try:
-        for mark in pyg.locateAllOnScreen(sprite_images['explination_mark_resized.png'], confidence=0.85, grayscale=True, region=window_geometry):
+        for mark in _locateAll_opencv(sprite_images['explination_mark_resized.png'], get_screen(), confidence=0.85, grayscale=True):
             y_pos: int = mark.top+EXPLINATION_MARK_OFFSET
             for i in range(-MAX_CHECK_X, MAX_CHECK_X):
                 if ImageGrab.grab().getpixel((mark.left+i, y_pos)) == (255, 255, 255):
@@ -123,15 +146,15 @@ def check_for_and_close_explaination():
 
 def crates():
     try:
-        for crate in pyg.locateAllOnScreen(sprite_images['crate_resized.png'], confidence=0.8, grayscale=True, region=window_geometry):
+        for crate in _locateAll_opencv(sprite_images['crate_resized.png'], get_screen(), confidence=0.8, grayscale=True):
             click(crate.left+crate.width/2, crate.top+crate.height/2)
             check_for_and_close_popup()
 
-        for crate in pyg.locateAllOnScreen(sprite_images['crate1_resized.png'], confidence=0.8, grayscale=True, region=window_geometry):
+        for crate in _locateAll_opencv(sprite_images['crate1_resized.png'], get_screen(), confidence=0.8, grayscale=True):
             click(crate.left+crate.width/2, crate.top+crate.height/2)
             check_for_and_close_popup()
 
-        for crate in pyg.locateAllOnScreen(sprite_images['crate4_resized.png'], confidence=0.8, grayscale=True, region=window_geometry):
+        for crate in _locateAll_opencv(sprite_images['crate4_resized.png'], get_screen(), confidence=0.8, grayscale=True):
             click(crate.left+crate.width/2, crate.top+crate.height/2)
             check_for_and_close_popup()
 
@@ -144,10 +167,18 @@ def upgrades():
     check_for_and_close_popup()
 
 def process_keys():
-    if space_pressed: exit()
+    if space_pressed:
+        print("Goodbye!")
+        exit()
+    
     elif backspace_pressed:
+        print("@@@!!! SESSION PAUSED !!!@@@")
+
         while 1:
-            if enter_pressed: break
+            if enter_pressed:
+                print("@@@!!! RESUMING SESSION !!!@@@")
+                break
+
             sleep(0.1)
 
 listener = keyboard.Listener(
@@ -162,7 +193,7 @@ while 1:
         check_for_and_close_explaination()
         upgrades()
         crates()
-        for upgrade in pyg.locateAllOnScreen(sprite_images['upgrade_resized.png'], confidence=0.79, grayscale=True, region=window_geometry):
+        for upgrade in _locateAll_opencv(sprite_images['upgrade_resized.png'], get_screen(), confidence=0.77, grayscale=True):
             print(upgrade)
             check_for_and_close_popup()
 
@@ -177,7 +208,7 @@ while 1:
             process_keys()
 
             new_click_location: Tuple = (upgrade.left+upgrade.width, upgrade.top-Y_OFFSET_UPGRADE_MENU)
-            screenshot = ImageGrab.grab()
+            screenshot = get_screen().convert('RGB')
 
             pixel_color = screenshot.getpixel(new_click_location)
             print(pixel_color)
@@ -214,6 +245,7 @@ while 1:
         if MAX_SCROLLS > 0: scroll()
 
     except Exception as e:
+        print(traceback.format_exc())
         print(e)
         check_for_and_close_popup()
         crates()
