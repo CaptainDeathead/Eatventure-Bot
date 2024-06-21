@@ -1,6 +1,0 @@
-Defaulting to user installation because normal site-packages is not writeable
-Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
-Collecting opencv-python
-  Using cached opencv-python-4.9.0.80.tar.gz (92.9 MB)
-  Installing build dependencies: started
-  Installing build dependencies: finished with status 'error'
