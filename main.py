@@ -6,11 +6,11 @@ from imageUtils import _locateAll_opencv
 from pynput import keyboard
 from time import sleep
 from typing import Tuple
-from twisted.internet import reactor, defer
-from get_window import get_scrcpy_window_geometry
+#from twisted.internet import reactor, defer
+#from get_window import get_scrcpy_window_geometry
 from data import *
 
-client = api.connect('192.168.0.143')
+client = api.connect(PHONE_IP_ADDRESS)
 
 def get_screen() -> Image:
     client.captureScreen('shot.png')
@@ -53,13 +53,13 @@ sprite_images = {}
 
 for sprite_path in SPRITES:
     new_sprite_path = sprite_path.replace('.png', '_resized.png')
-    image = Image.open(sprite_path)
+    image = Image.open("assets/" + sprite_path)
 
     new_image = image.resize((int(image.width*ZOOM), int(image.height*ZOOM)))
 
     sprite_images[new_sprite_path] = new_image
 
-    new_image.save(new_sprite_path)
+    new_image.save("assets/" + new_sprite_path)
 
 def click(*args) -> None:
     if len(args) == 1 and isinstance(args[0], tuple):
