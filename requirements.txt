@@ -4,3 +4,4 @@ opencv-python==4.10.0.84
 pynput==1.7.7
 numpy==2.0.0
 pyscreeze==0.1.30
+plyer==2.1.0

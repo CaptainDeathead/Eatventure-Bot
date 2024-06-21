@@ -1,13 +1,12 @@
 import traceback
+from plyer import notification
 from PIL import Image, ImageGrab
-from os import remove, path
+from os import remove, path, _exit
 from vncdotool import api
 from imageUtils import _locateAll_opencv
 from pynput import keyboard
 from time import sleep
 from typing import Tuple
-#from twisted.internet import reactor, defer
-#from get_window import get_scrcpy_window_geometry
 from data import *
 
 client = api.connect(PHONE_IP_ADDRESS)
@@ -173,15 +172,21 @@ def upgrades():
 
 def process_keys():
     if space_pressed:
+        client.disconnect()
+
         print("Goodbye!")
-        exit()
+        notification.notify(title="Eatventure-Bot: Goodbye...", message="Thanks for using the bot!")       
+
+        raise SystemExit()
     
     elif backspace_pressed:
         print("@@@!!! SESSION PAUSED !!!@@@")
+        notification.notify(title="Eatventure-Bot: Session Paused...", message="You can resume anytime by pressing 'f9'")
 
         while 1:
             if enter_pressed:
                 print("@@@!!! RESUMING SESSION !!!@@@")
+                notification.notify(title="Eatventure-Bot: Resuming Session...", message="You can pause anytime by pressing 'f7'")
                 break
 
             sleep(0.1)
@@ -250,11 +255,15 @@ def main():
 
             if MAX_SCROLLS > 0: scroll()
 
+        except SystemExit:
+            _exit(0)
+
         except Exception as e:
             print(traceback.format_exc())
-            print(e)
+
             check_for_and_close_popup()
             crates()
+
             if MAX_SCROLLS > 0: scroll()
 
 if __name__ == "__main__":
