@@ -17,10 +17,12 @@ def get_screen() -> Image:
     while not path.exists("shot.png"):
         sleep(0.01)
 
-    image = Image.open("shot.png")
+    with Image.open("shot.png") as image:
+        image_copy = image.copy()
+
     remove("shot.png")
 
-    return image
+    return image_copy
 
 scrolls_left: int = MAX_SCROLLS
 scroll_down: bool = True
