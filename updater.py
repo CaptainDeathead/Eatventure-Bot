@@ -114,12 +114,12 @@ class Updater:
             print("Please ensure you are connected to the internet!")
             exit()
 
-        print(f"\rDownloading '{filename}'...  Done!", flush=True)
+        print(f"Downloading '{filename}'...  Done!", flush=True)
 
-        print(f"Installing '{filename}'...", end='', flush=True)
+        print(f"-Installing '{filename}'...", end='', flush=True)
         with open(f"{self.PATH}/{filename}", "wb") as newfile:
             newfile.write(file_request.content)
-        print(f"\rInstalling '{filename}'...  Done!", flush=True)
+        print(f"-Installing '{filename}'...  Done!", flush=True)
 
     def download_and_install(self) -> None:
         for filename in self.online_files:
