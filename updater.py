@@ -124,9 +124,7 @@ class Updater:
     def download_and_install(self) -> None:
         print(f"Needs update...  {self.needs_update}")
 
-        if not self.needs_update:
-            print("\nNo update required!")
-            self.complete_function()
+        if not self.needs_update: print("\nNo update required!")
 
         for filename in self.online_files:
             self.download_file(filename)
