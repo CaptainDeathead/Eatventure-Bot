@@ -1,4 +1,4 @@
-v1.1.0
+v1.2.0
 __version__.txt
 .gitignore
 bot.py
@@ -11,3 +11,12 @@ README.md
 requirements.txt
 run.sh
 updater.py
+assets/adb_wifi.png
+assets/arial.ttf
+assets/big_cross.png
+assets/blue.png
+assets/crate.png
+assets/crate1.png
+assets/crate4.png
+assets/explination_mark.png
+assets/upgrade.png
