@@ -15,7 +15,9 @@ class Updater:
 
     RAW_GITHUB_BASE_URL: str = "https://raw.githubusercontent.com/CaptainDeathead/Eatventure-Bot/main"
 
-    def __init__(self) -> None:
+    def __init__(self, complete_function: function) -> None:
+        self.complete_function: function = complete_function
+
         self.load_installed()
         self.get_latest_changes()
         self.download_and_install()
@@ -122,8 +124,16 @@ class Updater:
         print(f"-Installing '{filename}'...  Done!", flush=True)
 
     def download_and_install(self) -> None:
+        print(f"Needs update...  {self.needs_update}")
+
+        if not self.needs_update:
+            print("\nNo update required! Loading program...")
+            self.complete_function()
+
         for filename in self.online_files:
             self.download_file(filename)
+
+        print(f"\n{len(self.online_files)} files have been installed over {len(self.installed_files)} files.\nAll updates complete! Loading program...")
 
 def main() -> None:
     updater: Updater = Updater()
