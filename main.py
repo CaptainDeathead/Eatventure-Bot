@@ -97,8 +97,6 @@ def on_release(key):
     elif key == keyboard.Key.enter: enter_pressed = False                             
 
 def scroll():
-    # TODO: PATCH THIS TO WORK WITH VNCDOTOOL
-
     global scrolls_left
     global scroll_down
 
