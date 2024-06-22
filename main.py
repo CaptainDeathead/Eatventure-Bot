@@ -1,276 +1,135 @@
-import traceback
-from plyer import notification
-from PIL import Image, ImageGrab
-from os import remove, path, _exit
-from vncdotool import api
-from imageUtils import _locateAll_opencv
-from pynput import keyboard
+import tkinter as tk
+from tkinter.simpledialog import askstring
+from tkinter.messagebox import showerror, showinfo
+from os import _exit
+from json import dumps
+from pyautogui import keyDown, keyUp
+from threading import Thread
 from time import sleep
-from typing import Tuple
 from data import *
 
-client = api.connect(PHONE_IP_ADDRESS)
+def find_ip_address() -> None:
+    ip = askstring("Phone IP Address", "What is your phone's IP Address? (Ensure its running a VNC server and is on the same internet connection as your computer)")
+    CONFIG["PHONE_IP_ADDRESS"] = ip
 
-def get_screen() -> Image:
-    client.captureScreen('shot.png')
+    with open("config.json", "w") as file:
+        file.write(dumps(CONFIG))
 
-    while not path.exists("shot.png"):
-        sleep(0.01)
+    showinfo("IP Fix", "Restart the bot!")
 
-    with Image.open("shot.png") as image:
-        image_copy = image.copy()
+try: import bot
+except:
+    showerror("Failed to find IP!", "Failed to connect to the phone, please try again with a different IP address!")
+    find_ip_address()
+    _exit(0)
 
-    remove("shot.png")
+def _from_rgb(rgb):
+    return "#%02x%02x%02x" % rgb
 
-    return image_copy
+class Window:
+    WIDTH: int = 800
+    HEIGHT: int = 800
 
-scrolls_left: int = MAX_SCROLLS
-scroll_down: bool = True
+    def __init__(self) -> None:
+        self.root: tk.Tk = tk.Tk()
+        self.root.geometry(f"{self.WIDTH}x{self.HEIGHT}")
+        self.root.title("Eatventure-Bot")
+        self.root.config(bg=_from_rgb((60, 0, 150)))
 
-space_pressed: bool = False
-backspace_pressed: bool = False
-enter_pressed: bool = False
+        self.bot_thread: Thread = Thread(target=self.push_bot_step, daemon=True)
+        self.sync_bot_pause_thread: Thread = Thread(target=self.sync_bot_pause, daemon=True)
 
-#window_geometry: Tuple = get_scrcpy_window_geometry()
-width, height = get_screen().size
-window_geometry: Tuple = (0, 0, width, height)
+        self.bot_status: bool = False
+        self.bot_pause_status: bool = False
 
-print(f"@@@!!! FOUND DEVICE WIDTH AND HEIGHT -> CONFIGURING GEOMETRY AS SIZE: {window_geometry} !!!@@@")
+        self.title_lbl: tk.Label = tk.Label(self.root, text="Eatventure Bot", bg=_from_rgb((60, 0, 150)), font=("assets/arial.ttf", 50), fg="#FFFFFF")
+        self.title_lbl.pack()
 
-ZOOM = window_geometry[3]/NORMAL_GEOMETRY[3]
+        self.bot_status_lbl: tk.Label = tk.Label(self.root, text="Bot status: Not running\n", bg=_from_rgb((60, 0, 150)), font=("assets/arial.ttf", 25), fg="#FF0000")
+        self.bot_status_lbl.pack()
 
-# set all the sizes for all the variables by deviding by zoom and adding the windows x and y coords
-Y_OFFSET_UPGRADE_MENU = int(Y_OFFSET_UPGRADE_MENU*ZOOM)
-MIDDLE_X = int(MIDDLE_X*ZOOM) + window_geometry[0]
-TOP_SCROLL_Y = int(TOP_SCROLL_Y*ZOOM) + window_geometry[1]
-HALF_SCROLL = int(HALF_SCROLL*ZOOM) + window_geometry[1]
-BOTTOM_SCROLL_Y = int(BOTTOM_SCROLL_Y*ZOOM) + window_geometry[1]
-MAX_CHECK_X = int(MAX_CHECK_X*ZOOM)
-UPGRADE = (int(UPGRADE[0]*ZOOM) + window_geometry[0], int(UPGRADE[1]*ZOOM) + window_geometry[1])
-TOP_UPGRADE = (int(TOP_UPGRADE[0]*ZOOM) + window_geometry[0], int(TOP_UPGRADE[1]*ZOOM) + window_geometry[1])
-EXPLINATION_MARK_OFFSET = int(EXPLINATION_MARK_OFFSET*ZOOM)
+        self.ip_lbl: tk.Label = tk.Label(self.root, text="Phone IP address", bg=_from_rgb((60, 0, 150)), font=("assets/arial.ttf", 20), fg="#FFFFFF")
+        self.ip_lbl.pack(anchor="n")
 
-sprite_images = {}
+        self.ip_entry: tk.Entry = tk.Entry(self.root, bg="#FFFFFF", fg="#000000", font=("assets/arial.ttf", 15))
+        self.ip_entry.pack(anchor="n")
+        self.ip_entry.insert(0, PHONE_IP_ADDRESS)
+        self.ip_entry.config(state='readonly')
 
-for sprite_path in SPRITES:
-    new_sprite_path = sprite_path.replace('.png', '_resized.png')
-    image = Image.open("assets/" + sprite_path)
+        self.bot_pause_btn: tk.Button = tk.Button(self.root, text="Pause", bg="#888888", fg="#FFAA00", font=("assets/arial.ttf", 35), activebackground="#888888", activeforeground="#FFAA00", command=self.set_bot_pause_state)
+        self.bot_pause_btn.place(anchor="center", x=self.WIDTH/2, y=self.HEIGHT/2-100)
 
-    new_image = image.resize((int(image.width*ZOOM), int(image.height*ZOOM)))
+        self.bot_run_btn: tk.Button = tk.Button(self.root, text="Start", bg="#0055FF", fg="#00FF00", font=("assets/arial.ttf", 50), activebackground="#0075FF", activeforeground="#00FF00", command=self.set_bot_state)
+        self.bot_run_btn.place(anchor="center", x=self.WIDTH/2, y=self.HEIGHT/2)
 
-    sprite_images[new_sprite_path] = new_image
+    def set_bot_pause_state(self) -> None:
+        if not self.bot_status: return
 
-    new_image.save("assets/" + new_sprite_path)
+        if not self.bot_pause_status:
+            self.bot_status_lbl.config(text="Bot status: Paused\n", fg="#FFAA00")
+            self.bot_pause_btn.config(text="Resume", fg="#00FF00", activeforeground="#00FF00")
+            keyDown('f7')
+            sleep(0.5)
+            keyUp('f7')
+        else:
+            self.bot_status_lbl.config(text="Bot status: Running\n", fg="#00FF00")
+            self.bot_pause_btn.config(text="Pause", fg="#FFAA00", activeforeground="#FFAA00")
+            keyDown('f9')
+            sleep(0.5)
+            keyUp('f9')
 
-def click(*args) -> None:
-    if len(args) == 1 and isinstance(args[0], tuple):
-        x, y = args[0]
-    else:
-        x, y = args
+        self.bot_pause_status = not self.bot_pause_status
 
-    client.mouseMove(int(x - window_geometry[0]), int(y - window_geometry[1]))
-    client.mousePress(1)
+    def set_bot_state(self) -> None:
+        if not self.bot_status:
+            self.bot_status_lbl.config(text="Bot status: Running\n", fg="#00FF00")
+            self.bot_run_btn.config(text="Stop", fg="#FF0000", activeforeground="#FF0000")
+            self.bot_pause_btn.config(text="Pause", fg="#FFAA00", bg="#0055FF", activeforeground="#FFAA00", activebackground="#0055FF")
 
-    sleep(0.05)
+            self.bot_status = True
 
-def on_press(key):
-    global space_pressed
-    global backspace_pressed
-    global enter_pressed
+            bot.main(False)
+            self.bot_thread: Thread = Thread(target=self.push_bot_step, daemon=True)
+            self.bot_thread.start()
 
-    if key == keyboard.Key.f8: space_pressed = True
-    elif key == keyboard.Key.f7:
-        backspace_pressed = True
-        enter_pressed = False
+            self.sync_bot_pause_thread: Thread = Thread(target=self.sync_bot_pause, daemon=True)
+            self.sync_bot_pause_thread.start()
+        else:
+            self.bot_status_lbl.config(text="Bot status: Not running\n", fg="#FF0000")
+            self.bot_run_btn.config(text="Start", fg="#00FF00", activeforeground="#00FF00")
+            self.bot_pause_btn.config(text="Pause", fg="#FFAA00", bg="#888888", activeforeground="#FFAA00", activebackground="#888888")
 
-    elif key == keyboard.Key.f9:
-        enter_pressed = True
-        backspace_pressed = False
+            self.bot_status = False
 
-def on_release(key):
-    global space_pressed
-    global backspace_pressed
-    global enter_pressed
+            keyDown('f8')
+            sleep(0.5)
+            keyUp('f8')
+            self.bot_thread.join()
+            self.sync_bot_pause_thread.join()
+            bot.space_pressed = False
 
-    if key == keyboard.Key.space: space_pressed = False
-    elif key == keyboard.Key.backspace: backspace_pressed = False
-    elif key == keyboard.Key.enter: enter_pressed = False                             
-
-def scroll():
-    global scrolls_left
-    global scroll_down
-
-    if scroll_down == True:
-        start_y = BOTTOM_SCROLL_Y
-        target_y = HALF_SCROLL
-    else:
-        start_y = TOP_SCROLL_Y
-        target_y = HALF_SCROLL
-
-    # cant scroll on box so just click to the side so upgrade box is not blocking
-    click(MIDDLE_X-int(200*ZOOM), start_y-int(100*ZOOM))
-
-    client.mouseMove(int(MIDDLE_X - window_geometry[0]), int(start_y - window_geometry[1]))
-    client.mouseDown(1)
-
-    if target_y < start_y:
-        for y in range(start_y, target_y, -150):
-            client.mouseMove(int(MIDDLE_X - window_geometry[0]), int(y - window_geometry[1]))
-            sleep(0.05)
-    else:
-        for y in range(start_y, target_y, 150):
-            client.mouseMove(int(MIDDLE_X - window_geometry[0]), int(y - window_geometry[1]))
-            sleep(0.05)
-
-    client.mouseUp(1)
-
-    scrolls_left -= 1
-
-    if scrolls_left <= 0:
-        scrolls_left = MAX_SCROLLS
-        scroll_down = not scroll_down
-
-def check_for_and_close_popup(done_once: bool = False) -> bool: # returns true if a popup is found (checks for popups twice to be sure)
-    try:
-        found_popup = False
-
-        for popup in _locateAll_opencv(sprite_images['big_cross_resized.png'], get_screen(), confidence=POPUP_CONFORDENCE, grayscale=True):
-            found_popup = True
-            click(popup.left+popup.width/ZOOM/2, popup.top+popup.height/ZOOM/2)
-            if not done_once: check_for_and_close_popup(True)
-            break
-
-        return found_popup
-
-    except: return False
-
-def check_for_and_close_explaination():
-    try:
-        for mark in _locateAll_opencv(sprite_images['explination_mark_resized.png'], get_screen(), confidence=EXPLINATION_CONFORDENCE, grayscale=True):
-            y_pos: int = mark.top+EXPLINATION_MARK_OFFSET
-            for i in range(-MAX_CHECK_X, MAX_CHECK_X):
-                if ImageGrab.grab().getpixel((mark.left+i, y_pos)) == (255, 255, 255):
-                    click(mark.left+i, y_pos)
-                    break
-
-            check_for_and_close_popup()
-    except: return
-
-def crates():
-    try:
-        for crate in _locateAll_opencv(sprite_images['crate_resized.png'], get_screen(), confidence=CRATES_CONFORDENCE, grayscale=True):
-            click(crate.left+crate.width/2, crate.top+crate.height/2)
-            check_for_and_close_popup()
-
-        for crate in _locateAll_opencv(sprite_images['crate1_resized.png'], get_screen(), confidence=CRATES_CONFORDENCE, grayscale=True):
-            click(crate.left+crate.width/2, crate.top+crate.height/2)
-            check_for_and_close_popup()
-
-        for crate in _locateAll_opencv(sprite_images['crate4_resized.png'], get_screen(), confidence=CRATES_CONFORDENCE, grayscale=True):
-            click(crate.left+crate.width/2, crate.top+crate.height/2)
-            check_for_and_close_popup()
-
-    except: return
-
-def upgrades():
-    click(UPGRADE)
-    for _ in range(10):
-        sleep(0.25)
-        click(TOP_UPGRADE)
-    check_for_and_close_popup()
-
-def process_keys():
-    if space_pressed:
-        client.disconnect()
-
-        print("Goodbye!")
-        notification.notify(title="Eatventure-Bot: Goodbye...", message="Thanks for using the bot!")       
-
-        _exit(0)
-    
-    elif backspace_pressed:
-        print("@@@!!! SESSION PAUSED !!!@@@")
-        notification.notify(title="Eatventure-Bot: Session Paused...", message="You can resume anytime by pressing 'f9'")
-
-        while 1:
-            if enter_pressed:
-                print("@@@!!! RESUMING SESSION !!!@@@")
-                notification.notify(title="Eatventure-Bot: Resuming Session...", message="You can pause anytime by pressing 'f7'")
-                break
+    def sync_bot_pause(self) -> None:
+        while self.bot_status:
+            if bot.paused != self.bot_pause_status: self.set_bot_pause_state()
 
             sleep(0.1)
 
+    def push_bot_step(self) -> None:
+        while self.bot_status:
+            try: bot.step_bot()
+            except: pass
+
+            if bot.off:
+                bot.off = False
+                break
+
+    def main(self) -> None:
+        self.root.mainloop()
+
 def main():
-    listener = keyboard.Listener(
-        on_press=on_press,
-        on_release=on_release)
-
-    listener.start()
-
-    while 1:
-        process_keys()
-        try:
-            check_for_and_close_explaination()
-            upgrades()
-            crates()
-            for upgrade in _locateAll_opencv(sprite_images['upgrade_resized.png'], get_screen(), confidence=STATION_UPGRADES_CONFORDENCE, grayscale=True):
-                print(upgrade)
-                check_for_and_close_popup()
-
-                station_location: Tuple = (upgrade.left+upgrade.width, upgrade.top+30*ZOOM)
-
-                if station_location[1] > window_geometry[1]+window_geometry[3]-Y_OFFSET_UPGRADE_MENU*2: continue
-
-                click(station_location)
-                sleep(0.5)
-
-                check_for_and_close_popup()
-                process_keys()
-
-                new_click_location: Tuple = (upgrade.left+upgrade.width, upgrade.top-Y_OFFSET_UPGRADE_MENU)
-                screenshot = get_screen().convert('RGB')
-
-                pixel_color = screenshot.getpixel(new_click_location)
-                print(pixel_color)
-
-                if pixel_color == (75, 189, 255) or pixel_color == (79, 190, 255):
-                    # click the button once to see if there is a popup, if there is one quit, else press it 20 more times without checking for popup
-                    click(new_click_location)
-                            
-                    if check_for_and_close_popup(): continue
-
-                    for i in range(0, 20):
-                        process_keys()
-                        click(new_click_location)
-                else:
-                    for i in range(-MAX_CHECK_X, MAX_CHECK_X):
-                        scan_pixel_location = (new_click_location[0]+i, new_click_location[1])
-
-                        #pyg.moveTo(scan_pixel_location)
-                        if screenshot.getpixel(scan_pixel_location) == (75, 189, 255) or screenshot.getpixel(scan_pixel_location) == (79, 190, 255):
-                            
-                            # click the button once to see if there is a popup, if there is one quit, else press it 20 more times without checking for popup
-                            click(scan_pixel_location)
-                            
-                            if check_for_and_close_popup(): break
-
-                            for i in range(0, 20):
-                                process_keys()
-                                click(scan_pixel_location)
-                                
-                            break
-
-                check_for_and_close_popup()
-
-            if MAX_SCROLLS > 0: scroll()
-
-        except Exception as e:
-            print(traceback.format_exc())
-
-            check_for_and_close_popup()
-            crates()
-
-            if MAX_SCROLLS > 0: scroll()
+    window: Window = Window()
+    window.main()
 
 if __name__ == "__main__":
     main()
+    _exit(0)
