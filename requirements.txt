@@ -5,3 +5,4 @@ pynput==1.7.7
 numpy==2.0.0
 pyscreeze==0.1.30
 plyer==2.1.0
+pyautogui==0.9.54

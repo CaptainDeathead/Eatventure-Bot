@@ -1,7 +1,13 @@
-from typing import Tuple
+from typing import Tuple, Dict
+from json import loads
+
+CONFIG: Dict[str, any] = {}
+
+with open("config.json", "r") as file:
+    CONFIG: Dict[str, any] = loads(file.read())
 
 # VNC Settings
-PHONE_IP_ADDRESS: str = "192.168.0.142"
+PHONE_IP_ADDRESS: str = CONFIG["PHONE_IP_ADDRESS"]
 
 # Confordence values
 STATION_UPGRADES_CONFORDENCE: float = 0.8
