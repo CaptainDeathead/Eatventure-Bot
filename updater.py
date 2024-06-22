@@ -9,6 +9,7 @@ import os
 import requests
 import traceback
 from typing import List
+from main import main as run_bot_gui
 
 class Updater:
     PATH: str = os.getcwd()
@@ -136,7 +137,7 @@ class Updater:
         print(f"\n{len(self.online_files)} files have been installed over {len(self.installed_files)} files.\nAll updates complete! Loading program...")
 
 def main() -> None:
-    updater: Updater = Updater()
+    updater: Updater = Updater(run_bot_gui)
 
 if __name__ == "__main__":
     main()
