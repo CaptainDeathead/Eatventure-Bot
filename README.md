@@ -7,10 +7,11 @@ At the moment it can upgrade stations, complete upgrades in the upgrades menu an
 ## Instructions
 
 ### To start the bot
-To run the bot type the following command: `python3 main.py` and it will connect to your phone and start playing.
+To run the bot type the following command: `python3 updater.py` and it will connect to your phone and start playing.
+It will first check for updates.
 If the bot seems to be running but not doing anything, try restarting the VNC server on your phone (trust me).
 
-### To control the bot (GUI coming soon...)
+### To control the bot
 To pause the bot press: `f7`.
 To unpause the bot press: `f9`.
 To stop the bot press: `ctrl+c` in your terminal where it is running.
