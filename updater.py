@@ -9,16 +9,13 @@ import os
 import requests
 import traceback
 from typing import List
-from main import main as run_bot_gui
 
 class Updater:
     PATH: str = os.getcwd()
 
     RAW_GITHUB_BASE_URL: str = "https://raw.githubusercontent.com/CaptainDeathead/Eatventure-Bot/main"
 
-    def __init__(self, complete_function: function) -> None:
-        self.complete_function: function = complete_function
-
+    def __init__(self) -> None:
         self.load_installed()
         self.get_latest_changes()
         self.download_and_install()
@@ -128,16 +125,17 @@ class Updater:
         print(f"Needs update...  {self.needs_update}")
 
         if not self.needs_update:
-            print("\nNo update required! Loading program...")
+            print("\nNo update required!")
             self.complete_function()
 
         for filename in self.online_files:
             self.download_file(filename)
 
-        print(f"\n{len(self.online_files)} files have been installed over {len(self.installed_files)} files.\nAll updates complete! Loading program...")
+        print(f"\n{len(self.online_files)} files have been installed over {len(self.installed_files)} files.\nAll updates complete!")
 
 def main() -> None:
-    updater: Updater = Updater(run_bot_gui)
+    updater: Updater = Updater()
 
 if __name__ == "__main__":
     main()
+    from main import main as run_bot_gui
