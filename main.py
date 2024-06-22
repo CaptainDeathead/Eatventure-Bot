@@ -56,11 +56,25 @@ class Window:
         self.ip_entry.insert(0, PHONE_IP_ADDRESS)
         self.ip_entry.config(state='readonly')
 
+        # fill in the blank space
+        tk.Label(self.root, text="", bg=_from_rgb((60, 0, 150)), font=("arial.ttf", 150)).pack()
+
         self.bot_pause_btn: tk.Button = tk.Button(self.root, text="Pause", bg="#888888", fg="#FFAA00", font=("assets/arial.ttf", 35), activebackground="#888888", activeforeground="#FFAA00", command=self.set_bot_pause_state)
         self.bot_pause_btn.place(anchor="center", x=self.WIDTH/2, y=self.HEIGHT/2-100)
 
         self.bot_run_btn: tk.Button = tk.Button(self.root, text="Start", bg="#0055FF", fg="#00FF00", font=("assets/arial.ttf", 50), activebackground="#0075FF", activeforeground="#00FF00", command=self.set_bot_state)
         self.bot_run_btn.place(anchor="center", x=self.WIDTH/2, y=self.HEIGHT/2)
+
+        self.scroll_lbl: tk.Label = tk.Label(self.root, text=f"Max scrolls", fg="#FFFFFF", bg=_from_rgb((60, 0, 150)), font=("assets/arial.ttf", 25))
+        self.scroll_lbl.pack()
+
+        self.scroll_var: tk.IntVar = tk.IntVar(self.root, MAX_SCROLLS)
+
+        self.scroll_slider: tk.Scale = tk.Scale(self.root, from_=0, to=20, orient="horizontal", fg="#FFFFFF", background=_from_rgb((60, 0, 150)), variable=self.scroll_var, command=self.set_scroll)
+        self.scroll_slider.pack()
+
+    def set_scroll(self, value: int) -> None:
+        bot.MAX_SCROLLS = self.scroll_var.get()
 
     def set_bot_pause_state(self) -> None:
         if not self.bot_status: return
