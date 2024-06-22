@@ -139,3 +139,4 @@ def main() -> None:
 if __name__ == "__main__":
     main()
     from main import main as run_bot_gui
+    run_bot_gui()
