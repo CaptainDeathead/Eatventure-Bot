@@ -69,12 +69,16 @@ for sprite_path in SPRITES:
     new_image.save("assets/" + new_sprite_path)
 
 def click(*args) -> None:
+    override: bool = False
+
     if len(args) == 1 and isinstance(args[0], tuple):
         x, y = args[0]
+    elif len(args) == 3:
+        x, y, override = args
     else:
         x, y = args
 
-    if y > NO_GO_BOTTOM_Y or y < NO_GO_TOP_Y:
+    if not override and (y > NO_GO_BOTTOM_Y or y < NO_GO_TOP_Y):
         print("Attempted to click in one of the no-go zone's")
         return
 
@@ -146,7 +150,7 @@ def check_for_and_close_popup(done_once: bool = False) -> bool: # returns true i
 
         for popup in _locateAll_opencv(sprite_images['big_cross_resized.png'], get_screen(), confidence=POPUP_CONFORDENCE, grayscale=True):
             found_popup = True
-            click(popup.left+popup.width/ZOOM/2, popup.top+popup.height/ZOOM/2)
+            click(popup.left+popup.width/ZOOM/2, popup.top+popup.height/ZOOM/2, True)
             if not done_once: check_for_and_close_popup(True)
             break
 
