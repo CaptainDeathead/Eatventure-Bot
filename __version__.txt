@@ -1,0 +1,13 @@
+v1.1.0
+assets/
+.gitignore
+bot.py
+config.json
+data.py
+get_window.py
+imageUtils.py
+main.py
+README.md
+requirements.txt
+run.sh
+updater.py
