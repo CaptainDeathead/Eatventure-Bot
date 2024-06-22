@@ -53,6 +53,8 @@ MAX_CHECK_X = int(MAX_CHECK_X*ZOOM)
 UPGRADE = (int(UPGRADE[0]*ZOOM) + window_geometry[0], int(UPGRADE[1]*ZOOM) + window_geometry[1])
 TOP_UPGRADE = (int(TOP_UPGRADE[0]*ZOOM) + window_geometry[0], int(TOP_UPGRADE[1]*ZOOM) + window_geometry[1])
 EXPLINATION_MARK_OFFSET = int(EXPLINATION_MARK_OFFSET*ZOOM)
+NO_GO_BOTTOM_Y = int(NO_GO_BOTTOM_Y*ZOOM)
+NO_GO_TOP_Y = int(NO_GO_TOP_Y*ZOOM)
 
 sprite_images = {}
 
@@ -71,6 +73,10 @@ def click(*args) -> None:
         x, y = args[0]
     else:
         x, y = args
+
+    if y > NO_GO_BOTTOM_Y or y < NO_GO_TOP_Y:
+        print("Attempted to click in one of the no-go zone's")
+        return
 
     client.mouseMove(int(x - window_geometry[0]), int(y - window_geometry[1]))
     client.mousePress(1)

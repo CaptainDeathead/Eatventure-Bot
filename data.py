@@ -27,6 +27,8 @@ UPGRADE: Tuple = (387, 898)
 TOP_UPGRADE: Tuple = (330, 385)
 EXPLINATION_MARK_OFFSET: int = 30
 NORMAL_GEOMETRY: Tuple = (1094, 84, 442, 957)
+NO_GO_BOTTOM_Y: int = 1329
+NO_GO_TOP_Y: int = 136
 
 # MISC
 SPRITES: Tuple = ("big_cross.png", "crate.png", "crate1.png", "crate4.png", "explination_mark.png", "upgrade.png")
