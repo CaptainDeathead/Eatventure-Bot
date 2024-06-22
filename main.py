@@ -112,11 +112,19 @@ def scroll():
     # cant scroll on box so just click to the side so upgrade box is not blocking
     click(MIDDLE_X-int(200*ZOOM), start_y-int(100*ZOOM))
 
-    """
-    pyg.mouseDown(MIDDLE_X, start_y)
-    pyg.moveTo(MIDDLE_X, target_y, duration=1)
-    pyg.mouseUp()
-    """
+    client.mouseMove(int(MIDDLE_X - window_geometry[0]), int(start_y - window_geometry[1]))
+    client.mouseDown(1)
+
+    if target_y < start_y:
+        for y in range(start_y, target_y, -150):
+            client.mouseMove(int(MIDDLE_X - window_geometry[0]), int(y - window_geometry[1]))
+            sleep(0.05)
+    else:
+        for y in range(start_y, target_y, 150):
+            client.mouseMove(int(MIDDLE_X - window_geometry[0]), int(y - window_geometry[1]))
+            sleep(0.05)
+
+    client.mouseUp(1)
 
     scrolls_left -= 1
 
@@ -128,7 +136,7 @@ def check_for_and_close_popup(done_once: bool = False) -> bool: # returns true i
     try:
         found_popup = False
 
-        for popup in _locateAll_opencv(sprite_images['big_cross_resized.png'], get_screen(), confidence=0.8, grayscale=True):
+        for popup in _locateAll_opencv(sprite_images['big_cross_resized.png'], get_screen(), confidence=POPUP_CONFORDENCE, grayscale=True):
             found_popup = True
             click(popup.left+popup.width/ZOOM/2, popup.top+popup.height/ZOOM/2)
             if not done_once: check_for_and_close_popup(True)
@@ -140,7 +148,7 @@ def check_for_and_close_popup(done_once: bool = False) -> bool: # returns true i
 
 def check_for_and_close_explaination():
     try:
-        for mark in _locateAll_opencv(sprite_images['explination_mark_resized.png'], get_screen(), confidence=0.85, grayscale=True):
+        for mark in _locateAll_opencv(sprite_images['explination_mark_resized.png'], get_screen(), confidence=EXPLINATION_CONFORDENCE, grayscale=True):
             y_pos: int = mark.top+EXPLINATION_MARK_OFFSET
             for i in range(-MAX_CHECK_X, MAX_CHECK_X):
                 if ImageGrab.grab().getpixel((mark.left+i, y_pos)) == (255, 255, 255):
@@ -152,15 +160,15 @@ def check_for_and_close_explaination():
 
 def crates():
     try:
-        for crate in _locateAll_opencv(sprite_images['crate_resized.png'], get_screen(), confidence=0.8, grayscale=True):
+        for crate in _locateAll_opencv(sprite_images['crate_resized.png'], get_screen(), confidence=CRATES_CONFORDENCE, grayscale=True):
             click(crate.left+crate.width/2, crate.top+crate.height/2)
             check_for_and_close_popup()
 
-        for crate in _locateAll_opencv(sprite_images['crate1_resized.png'], get_screen(), confidence=0.8, grayscale=True):
+        for crate in _locateAll_opencv(sprite_images['crate1_resized.png'], get_screen(), confidence=CRATES_CONFORDENCE, grayscale=True):
             click(crate.left+crate.width/2, crate.top+crate.height/2)
             check_for_and_close_popup()
 
-        for crate in _locateAll_opencv(sprite_images['crate4_resized.png'], get_screen(), confidence=0.8, grayscale=True):
+        for crate in _locateAll_opencv(sprite_images['crate4_resized.png'], get_screen(), confidence=CRATES_CONFORDENCE, grayscale=True):
             click(crate.left+crate.width/2, crate.top+crate.height/2)
             check_for_and_close_popup()
 
@@ -168,8 +176,9 @@ def crates():
 
 def upgrades():
     click(UPGRADE)
-    sleep(1)
-    click(TOP_UPGRADE)
+    for _ in range(10):
+        sleep(0.25)
+        click(TOP_UPGRADE)
     check_for_and_close_popup()
 
 def process_keys():
@@ -179,7 +188,7 @@ def process_keys():
         print("Goodbye!")
         notification.notify(title="Eatventure-Bot: Goodbye...", message="Thanks for using the bot!")       
 
-        raise SystemExit()
+        _exit(0)
     
     elif backspace_pressed:
         print("@@@!!! SESSION PAUSED !!!@@@")
@@ -206,7 +215,7 @@ def main():
             check_for_and_close_explaination()
             upgrades()
             crates()
-            for upgrade in _locateAll_opencv(sprite_images['upgrade_resized.png'], get_screen(), confidence=0.77, grayscale=True):
+            for upgrade in _locateAll_opencv(sprite_images['upgrade_resized.png'], get_screen(), confidence=STATION_UPGRADES_CONFORDENCE, grayscale=True):
                 print(upgrade)
                 check_for_and_close_popup()
 
@@ -256,9 +265,6 @@ def main():
                 check_for_and_close_popup()
 
             if MAX_SCROLLS > 0: scroll()
-
-        except SystemExit:
-            _exit(0)
 
         except Exception as e:
             print(traceback.format_exc())
