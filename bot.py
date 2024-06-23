@@ -52,6 +52,10 @@ BOTTOM_SCROLL_Y = int(BOTTOM_SCROLL_Y*ZOOM) + window_geometry[1]
 MAX_CHECK_X = int(MAX_CHECK_X*ZOOM)
 UPGRADE = (int(UPGRADE[0]*ZOOM) + window_geometry[0], int(UPGRADE[1]*ZOOM) + window_geometry[1])
 TOP_UPGRADE = (int(TOP_UPGRADE[0]*ZOOM) + window_geometry[0], int(TOP_UPGRADE[1]*ZOOM) + window_geometry[1])
+RENOVATION_UPGRADE_MIDPOINT = (int(RENOVATION_UPGRADE_MIDPOINT[0]*ZOOM + window_geometry[0]), int(RENOVATION_UPGRADE_MIDPOINT[1]*ZOOM + window_geometry[1]))
+RENOVATION_UPGRADE = (int(RENOVATION_UPGRADE[0]*ZOOM + window_geometry[0]), int(RENOVATION_UPGRADE[1]*ZOOM + window_geometry[1]))
+RENOVATE_BUTTON = (int(RENOVATE_BUTTON[0]*ZOOM + window_geometry[0]), int(RENOVATE_BUTTON[1]*ZOOM + window_geometry[1]))
+OPEN_BUTTON = (int(OPEN_BUTTON[0]*ZOOM + window_geometry[0]), int(OPEN_BUTTON[1]*ZOOM + window_geometry[1]))
 EXPLINATION_MARK_OFFSET = int(EXPLINATION_MARK_OFFSET*ZOOM)
 NO_GO_BOTTOM_Y = int(NO_GO_BOTTOM_Y*ZOOM)
 NO_GO_TOP_Y = int(NO_GO_TOP_Y*ZOOM)
@@ -69,18 +73,25 @@ for sprite_path in SPRITES:
     new_image.save("assets/" + new_sprite_path)
 
 def click(*args) -> None:
-    override: bool = False
-
     if len(args) == 1 and isinstance(args[0], tuple):
         x, y = args[0]
-    elif len(args) == 3:
-        x, y, override = args
     else:
         x, y = args
 
-    if not override and (y > NO_GO_BOTTOM_Y or y < NO_GO_TOP_Y):
+    if y > NO_GO_BOTTOM_Y or y < NO_GO_TOP_Y:
         print("Attempted to click in one of the no-go zone's")
         return
+
+    client.mouseMove(int(x - window_geometry[0]), int(y - window_geometry[1]))
+    client.mousePress(1)
+
+    sleep(0.05)
+
+def click_no_verify(*args) -> None:
+    if len(args) == 1 and isinstance(args[0], tuple):
+        x, y = args[0]
+    else:
+        x, y = args
 
     client.mouseMove(int(x - window_geometry[0]), int(y - window_geometry[1]))
     client.mousePress(1)
@@ -124,17 +135,16 @@ def scroll():
     # cant scroll on box so just click to the side so upgrade box is not blocking
     click(MIDDLE_X-int(200*ZOOM), start_y-int(100*ZOOM))
 
-    client.mouseMove(int(MIDDLE_X - window_geometry[0]), int(start_y - window_geometry[1]))
+    client.mouseMove(MIDDLE_X, start_y)
     client.mouseDown(1)
 
-    if target_y < start_y:
-        for y in range(start_y, target_y, -150):
-            client.mouseMove(int(MIDDLE_X - window_geometry[0]), int(y - window_geometry[1]))
-            sleep(0.05)
-    else:
-        for y in range(start_y, target_y, 150):
-            client.mouseMove(int(MIDDLE_X - window_geometry[0]), int(y - window_geometry[1]))
-            sleep(0.05)
+    step: int = 50
+
+    if target_y < start_y: step = -50
+    
+    for y in range(start_y, target_y, step):
+        client.mouseMove(MIDDLE_X, y)
+        sleep(0.05)
 
     client.mouseUp(1)
 
@@ -150,7 +160,7 @@ def check_for_and_close_popup(done_once: bool = False) -> bool: # returns true i
 
         for popup in _locateAll_opencv(sprite_images['big_cross_resized.png'], get_screen(), confidence=POPUP_CONFORDENCE, grayscale=True):
             found_popup = True
-            click(popup.left+popup.width/ZOOM/2, popup.top+popup.height/ZOOM/2, True)
+            click_no_verify(popup.left+popup.width/ZOOM/2, popup.top+popup.height/ZOOM/2)
             if not done_once: check_for_and_close_popup(True)
             break
 
@@ -187,11 +197,37 @@ def crates():
     except: return
 
 def upgrades():
-    click(UPGRADE)
+    click_no_verify(UPGRADE)
     for _ in range(10):
         sleep(0.25)
-        click(TOP_UPGRADE)
+        click_no_verify(TOP_UPGRADE)
     check_for_and_close_popup()
+
+def check_renovation() -> bool:
+    screenshot = get_screen()
+
+    for renovate_upgrade in _locateAll_opencv(sprite_images["renovate_upgrade_resized.png"], screenshot, confidence=RENOVATE_UPGRADE_CONFORDENCE, grayscale=True):
+        if renovate_upgrade.top + renovate_upgrade.height < NO_GO_BOTTOM_Y: continue
+        if renovate_upgrade.left < 46*ZOOM or renovate_upgrade.left > 70*ZOOM: continue
+
+        pix_color = screenshot.getpixel((renovate_upgrade.left, renovate_upgrade.top+renovate_upgrade.height+20*ZOOM))
+
+        if pix_color != (75, 189, 255) and pix_color != (75, 190, 255):
+            print(f"Cannot renovate because the pixel color doesn't match expectations: {pix_color=}")
+            continue
+
+        print("Renovating...")
+        notification.notify(title="Eatventure-Bot: Renovating...", message="Sit tight while we move to a new restraunt / city!")
+        click_no_verify(renovate_upgrade.left, renovate_upgrade.top + renovate_upgrade.height)
+        click_no_verify(RENOVATION_UPGRADE)
+        sleep(1)
+        click_no_verify(RENOVATE_BUTTON)
+        sleep(8)
+        for _ in range(5): click_no_verify(OPEN_BUTTON)
+
+        return True
+    
+    return False
 
 def process_keys() -> None:
     global paused
@@ -231,6 +267,10 @@ def step_bot():
         check_for_and_close_explaination()
         upgrades()
         crates()
+
+        renovating: bool = check_renovation()
+        if renovating: return
+
         for upgrade in _locateAll_opencv(sprite_images['upgrade_resized.png'], get_screen(), confidence=STATION_UPGRADES_CONFORDENCE, grayscale=True):
             print(upgrade)
             check_for_and_close_popup()

@@ -140,3 +140,4 @@ if __name__ == "__main__":
     main()
     from main import main as run_bot_gui
     run_bot_gui()
+    os._exit(0)

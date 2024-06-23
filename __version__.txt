@@ -20,3 +20,4 @@ assets/crate1.png
 assets/crate4.png
 assets/explination_mark.png
 assets/upgrade.png
+assets/renovate_upgrade.png
