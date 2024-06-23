@@ -210,12 +210,6 @@ def check_renovation() -> bool:
         if renovate_upgrade.top + renovate_upgrade.height < NO_GO_BOTTOM_Y: continue
         if renovate_upgrade.left < 46*ZOOM or renovate_upgrade.left > 70*ZOOM: continue
 
-        pix_color = screenshot.getpixel((renovate_upgrade.left, renovate_upgrade.top+renovate_upgrade.height+20*ZOOM))
-
-        if pix_color != (75, 189, 255) and pix_color != (75, 190, 255):
-            print(f"Cannot renovate because the pixel color doesn't match expectations: {pix_color=}")
-            continue
-
         print("Renovating...")
         notification.notify(title="Eatventure-Bot: Renovating...", message="Sit tight while we move to a new restraunt / city!")
         click_no_verify(renovate_upgrade.left, renovate_upgrade.top + renovate_upgrade.height)
