@@ -8,7 +8,8 @@ DO NOT MODIFY THIS CODE AS IT MAY BREAK YOUR INSTALL
 import os
 import requests
 import traceback
-from typing import List
+import json
+from typing import List, Dict
 
 class Updater:
     PATH: str = os.getcwd()
@@ -58,13 +59,13 @@ class Updater:
         except requests.RequestException:
             print(f"\rRequesting the latest version at '{self.RAW_GITHUB_BASE_URL}/__version__.txt'...  Failed!\n", flush=True)
             print(traceback)
-            print("Please ensure you are connected to the internet!")
-            exit()
+            print("Please ensure you are connected to the internet!\nInvoking main.py anyway...")
+            invoke_main()
 
         if version_request.status_code >= 400:
             print(f"\rRequesting the latest version at '{self.RAW_GITHUB_BASE_URL}/__version__.txt'...  ERROR: {version_request.status_code}!\n", flush=True)
-            print("Please ensure you are connected to the internet!")
-            exit()
+            print("Please ensure you are connected to the internet!\nInvoking main.py anyway...")
+            invoke_main()
 
         print(f"\rRequesting the latest version at '{self.RAW_GITHUB_BASE_URL}/__version__.txt'...  Done!", flush=True)
 
@@ -136,8 +137,11 @@ class Updater:
 def main() -> None:
     updater: Updater = Updater()
 
-if __name__ == "__main__":
-    main()
+def invoke_main() -> None:
     from main import main as run_bot_gui
     run_bot_gui()
     os._exit(0)
+
+if __name__ == "__main__":
+    main()
+    invoke_main()
