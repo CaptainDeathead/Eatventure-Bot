@@ -36,8 +36,6 @@ I would try downloading a VNC server like Android and following their instuction
 Then you will probably need to allow the app permissions on your phone by following the instructions they give you.
 
 ### Connecting your phone to your PC
-1. At this stage, check your VNC server on your phone and find its IP address.
-2. Open `data.py` in the bot directory and replace the value for `PHONE_IP_ADDRESS` with your phone's IP address.
-3. Feel free to tinker with `data.py` to make it work with your phone size
+When you run the bot it will ask for you to put in your IP.
 
 ### Now follow [instructions](#instructions)
