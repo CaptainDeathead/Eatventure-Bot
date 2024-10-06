@@ -1,5 +1,7 @@
 # Eatventure-Bot
 
+## NOTICE: This project is now depricated due to new additions to the game which makes development on the bot very difficult
+
 ## About
 This bot is designed to play Eatventure for you!
 At the moment it can upgrade stations, complete upgrades in the upgrades menu and collect crates.
